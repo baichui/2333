@@ -9,8 +9,10 @@ NoneBot2 插件：鸣潮主题「今日运势」白底卡片。
 
 ## 安装
 
+```
 # 直接clone到插件目录：
 git clone https://github.com/baichui/wuwa_luck.git
+```
 
 ## 说明
 
