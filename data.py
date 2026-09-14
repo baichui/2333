@@ -202,7 +202,7 @@ BAD_DEEDS_DAILY: list[tuple[str, str]] = [
     ]
 ]
 
-GACHA_METRICS: list[str] = ["限定池", "武器池", "声骸掉率", "探索效率"]
+GACHA_METRICS: list[str] = ["限定池", "武器池", "声骸调谐"]
 
 QUOTES_FOOTER: list[str] = [
     "潮汐有信，漂泊有光。",
