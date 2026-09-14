@@ -50,12 +50,12 @@ def _font(path: Path, size: int) -> ImageFont.FreeTypeFont:
 
 def _pick_fonts() -> dict[str, Path]:
     win = Path(r"C:\Windows\Fonts")
+    # sans 优先雅黑 Regular：NotoSans VF 在 PIL 下常偏细
     candidates = {
         "serif": [win / "NotoSerifSC-VF.ttf", win / "simsun.ttc", win / "simhei.ttf"],
-        "sans": [win / "NotoSansSC-VF.ttf", win / "msyh.ttc", win / "msyhbd.ttc", win / "simhei.ttf"],
-        "bold": [win / "msyhbd.ttc", win / "NotoSansSC-VF.ttf", win / "simhei.ttf"],
+        "sans": [win / "msyh.ttc", win / "NotoSansSC-VF.ttf", win / "simhei.ttf"],
+        "bold": [win / "msyhbd.ttc", win / "simhei.ttf", win / "NotoSansSC-VF.ttf"],
     }
-    # 本地 ttf 作兜底
     for key, extra in (
         ("serif", TTF / "NotoSerifSC-VF.ttf"),
         ("sans", TTF / "MiSansVF.ttf"),
@@ -74,7 +74,7 @@ def _pick_fonts() -> dict[str, Path]:
 
 
 def _seed_from(nickname: str, uid: int | str, day: date) -> random.Random:
-    raw = f"{nickname}|{uid}|{day.isoformat()}|wuwa-luck-v8".encode()
+    raw = f"{nickname}|{uid}|{day.isoformat()}|wuwa-luck-v14".encode()
     digest = hashlib.sha256(raw).hexdigest()
     return random.Random(int(digest[:16], 16))
 
@@ -219,13 +219,14 @@ def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
     f_title = _font(fonts_map["serif"], 38)
     f_alias = _font(fonts_map["sans"], 22)
     f_fortune = _font(fonts_map["serif"], 88)
-    f_date = _font(fonts_map["sans"], 18)
+    f_date = _font(fonts_map["sans"], 19)
     f_label = _font(fonts_map["bold"], 24)
     f_item = _font(fonts_map["bold"], 28)
-    f_detail = _font(fonts_map["sans"], 19)
+    # 小字：雅黑 Regular，字号 +1，不描边
+    f_detail = _font(fonts_map["sans"], 20)
     f_char = _font(fonts_map["serif"], 26)
     f_quote = _font(fonts_map["sans"], 22)
-    f_footer = _font(fonts_map["sans"], 17)
+    f_footer = _font(fonts_map["sans"], 18)
     f_metric_val = _font(fonts_map["bold"], 22)
 
     # 画布：浅冰蓝纸底
@@ -236,6 +237,13 @@ def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
     bg_path = ASSETS / "bg.png"
     if bg_path.exists():
         tex = Image.open(bg_path).convert("RGBA").resize((CANVAS_W, CANVAS_H), Image.Resampling.LANCZOS)
+        # 盖掉生成图右下角「AI生成 / Xiaomi MiMo」水印：整块用左侧纹理+纸色覆盖
+        wm_w, wm_h = 420, 140
+        src_x = max(0, CANVAS_W - wm_w - 80)
+        patch = tex.crop((src_x, CANVAS_H - wm_h, src_x + wm_w, CANVAS_H))
+        tex.paste(patch, (CANVAS_W - wm_w, CANVAS_H - wm_h))
+        overlay = Image.new("RGBA", (wm_w + 40, wm_h + 20), (236, 244, 248, 230))
+        tex.alpha_composite(overlay, (CANVAS_W - wm_w - 20, CANVAS_H - wm_h - 10))
         # 提亮 + 降透明，只作纸纹
         white = Image.new("RGBA", tex.size, (255, 255, 255, 255))
         tex = Image.blend(white, tex, alpha=0.12)
@@ -285,7 +293,7 @@ def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
 
     # 指标区（浅灰白卡）
     panel_y = y
-    panel_h = 200
+    panel_h = 170
     px0, px1 = MARGIN + 28, CANVAS_W - MARGIN - 28
     _round_rect(draw, (px0, panel_y, px1, panel_y + panel_h), radius=14, fill=SOFT, outline=LINE, width=1)
     draw.text((px0 + 24, panel_y + 16), "谐 振 指 数", font=f_label, fill=TEAL)
@@ -303,7 +311,7 @@ def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
     gap = 16
     half_w = (CANVAS_W - MARGIN * 2 - gap) // 2
     n_slots = max(len(goods), len(bads))
-    card_h = 160 if n_slots <= 1 else 240
+    card_h = 190 if n_slots <= 1 else 290
     left_x = MARGIN + 4
     right_x = left_x + half_w + gap
 
@@ -319,14 +327,14 @@ def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
     draw.text((right_x + 18, y + 8), "忌", font=f_label, fill=RED)
 
     def _deed_block(origin_x: int, origin_y: int, deeds: tuple):
-        cy_item = origin_y + 56
+        cy_item = origin_y + 64
         for title, detail in deeds:
             draw.text((origin_x + 18, cy_item), title, font=f_item, fill=INK)
             lines = _wrap(draw, detail, f_detail, half_w - 36)
             for line in lines[:2]:
-                cy_item += 30
+                cy_item += 40
                 draw.text((origin_x + 18, cy_item), line, font=f_detail, fill=MUTED)
-            cy_item += 40
+            cy_item += 52
 
     _deed_block(left_x, y, goods)
     _deed_block(right_x, y, bads)
