@@ -2,6 +2,12 @@
 
 NoneBot2 插件：鸣潮主题「今日运势」白底卡片。
 
+## 示例
+
+![示例1](examples/sample1.png)
+
+![示例2](examples/sample2.png)
+
 ## 指令
 
 - `/luck`
@@ -21,4 +27,5 @@ git clone https://github.com/baichui/wuwa_luck.git
 - 共鸣指引：小爱（爱弥斯）约 80%，其余角色均分。
 - 宜/忌默认各 2 条；大吉/大凶特判缩为 1 条。
 - 鸣潮相关文案全卡最多 1 条。
+- 谐振指数：限定池 / 武器池 / 声骸调谐。
 - 字体优先使用系统字体。
