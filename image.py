@@ -153,7 +153,14 @@ def _draw_wave_deco(draw: ImageDraw.ImageDraw, y: int, color: str = CYAN):
         draw.line(pts, fill=color, width=thick)
 
 
-def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
+def get_image(
+    nickname: str = "漂泊者",
+    uid: int | str = 0,
+    *,
+    character_weights: dict[str, float] | None = None,
+    wuwa_deed_chance: float = 0.30,
+    metric_labels: list[str] | None = None,
+) -> bytes:
     day = date.today()
     rng = _seed_from(nickname, uid, day)
     fortune_zh, _fortune_alias, fortune_color = weighted_fortune(rng)
@@ -190,8 +197,8 @@ def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
         goods = [g1, g2]
         bads = [b1, b2]
 
-    # 约 30% 把「非特判」的一格换成鸣潮；可替换槽位为空则跳过
-    if rng.random() < 0.30:
+    # 约 wuwa_deed_chance 把「非特判」的一格换成鸣潮；可替换槽位为空则跳过
+    if rng.random() < max(0.0, min(1.0, float(wuwa_deed_chance))):
         slots: list[tuple[str, int]] = []
         if special != "诸事不宜":
             slots.append(("good", 0))
@@ -206,14 +213,18 @@ def get_image(nickname: str = "漂泊者", uid: int | str = 0) -> bytes:
             else:
                 bads[idx] = rng.choice(BAD_DEEDS_WUWA)
 
-    char_name, char_quote = pick_character_guide(rng)
+    char_name, char_quote = pick_character_guide(
+        rng,
+        character_weights=character_weights,
+    )
     footer = rng.choice(QUOTES_FOOTER)
 
     bonus = {
         "大吉": 18, "上吉": 12, "中吉": 6, "小吉": 0,
         "末吉": -6, "凶": -14, "大凶": -22,
     }.get(fortune_zh, 0)
-    metrics = [(label, max(5, min(99, rng.randint(48, 92) + bonus))) for label in GACHA_METRICS]
+    labels = metric_labels if metric_labels else GACHA_METRICS
+    metrics = [(label, max(5, min(99, rng.randint(48, 92) + bonus))) for label in labels]
 
     fonts_map = _pick_fonts()
     f_title = _font(fonts_map["serif"], 38)
